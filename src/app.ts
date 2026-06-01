@@ -1,3 +1,13 @@
+declare global {
+  namespace Express {
+    interface Request {
+      user: {
+        _id: string;
+      };
+    }
+  }
+}
+
 import express, { Request, Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
 import userRoutes from './routes/users';
