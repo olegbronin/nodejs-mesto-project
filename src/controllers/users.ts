@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import User from '../models/user';
+import { isMongooseError } from '../types/error';
 
 import * as Constants from '../constants/constants';
 
@@ -22,7 +23,7 @@ export const getUserById = async (req: Request, res: Response) => {
     }
     return res.status(Constants.ERROR_CODE_200).send(user);
   } catch (err) {
-    if ((err as any).name === 'CastError') {
+    if (err instanceof Error && err.name === 'CastError') {
       return res.status(Constants.ERROR_CODE_400).send({ message: 'Передан некорректный _id пользователя' });
     }
     return res.status(Constants.ERROR_CODE_500).send({ message: Constants.ERROR_CODE_500_MESSAGE });
@@ -35,7 +36,7 @@ export const createUser = async (req: Request, res: Response) => {
     const user = await User.create({ name, about, avatar });
     return res.status(Constants.ERROR_CODE_201).send(user);
   } catch (err) {
-    if ((err as any).name === 'ValidationError') {
+    if (err instanceof Error && err.name === 'ValidationError') {
       return res.status(Constants.ERROR_CODE_400).send({ message: 'Переданы некорректные данные при создании пользователя' });
     }
     return res.status(Constants.ERROR_CODE_500).send({ message: Constants.ERROR_CODE_500_MESSAGE });
@@ -57,9 +58,9 @@ export const updateProfile = async (req: Request, res: Response) => {
       return res.status(Constants.ERROR_CODE_404).send({ message: Constants.ERROR_CODE_404_MESSAGE_USER });
     }
 
-    return res.status(200).send(user);
+    return res.status(Constants.ERROR_CODE_200).send(user);
   } catch (err) {
-    if ((err as any).name === 'ValidationError') {
+    if (err instanceof Error && err.name === 'ValidationError') {
       return res.status(Constants.ERROR_CODE_400).send({ message: 'Переданы некорректные данные при обновлении профиля' });
     }
     return res.status(Constants.ERROR_CODE_500).send({ message: Constants.ERROR_CODE_500_MESSAGE });
@@ -77,9 +78,13 @@ export const updateAvatar = async (req: Request, res: Response) => {
       { new: true, runValidators: true },
     );
 
-    return res.status(200).send(user);
+    if (!user) {
+      return res.status(Constants.ERROR_CODE_404).send({ message: Constants.ERROR_CODE_404_MESSAGE_USER });
+    }
+
+    return res.status(Constants.ERROR_CODE_200).send(user);
   } catch (err) {
-    if ((err as any).name === 'ValidationError') {
+    if (err instanceof Error && err.name === 'ValidationError') {
       return res.status(Constants.ERROR_CODE_400).send({ message: 'Переданы некорректные данные при обновлении аватара' });
     }
     return res.status(Constants.ERROR_CODE_500).send({ message: Constants.ERROR_CODE_500_MESSAGE });

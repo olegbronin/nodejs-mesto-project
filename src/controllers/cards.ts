@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import Card from '../models/card';
+import { isMongooseError } from '../types/error';
 
 import * as Constants from '../constants/constants';
 
@@ -20,7 +21,7 @@ export const createCard = async (req: Request, res: Response) => {
     const card = await Card.create({ name, link, owner });
     return res.status(Constants.ERROR_CODE_201).send(card);
   } catch (err) {
-    if ((err as any).name === 'ValidationError') {
+    if (err instanceof Error && err.name === 'ValidationError') {
       return res.status(Constants.ERROR_CODE_400).send({ message: 'Переданы некорректные данные при создании карточки' });
     }
     return res.status(Constants.ERROR_CODE_500).send({ message: Constants.ERROR_CODE_500_MESSAGE });
@@ -38,7 +39,7 @@ export const deleteCardById = async (req: Request, res: Response) => {
 
     return res.status(Constants.ERROR_CODE_200).send({ message: 'Карточка успешно удалена' });
   } catch (err) {
-    if ((err as any).name === 'CastError') {
+    if (err instanceof Error && err.name === 'CastError') {
       return res.status(Constants.ERROR_CODE_400).send({ message: 'Передан некорректный _id карточки' });
     }
     return res.status(Constants.ERROR_CODE_500).send({ message: Constants.ERROR_CODE_500_MESSAGE });
@@ -62,7 +63,7 @@ export const likeCard = async (req: Request, res: Response) => {
 
     return res.status(Constants.ERROR_CODE_200).send(card);
   } catch (err) {
-    if ((err as any).name === 'CastError') {
+    if (err instanceof Error && err.name === 'CastError') {
       return res.status(Constants.ERROR_CODE_400).send({ message: 'Передан некорректный _id карточки' });
     }
     return res.status(Constants.ERROR_CODE_500).send({ message: Constants.ERROR_CODE_500_MESSAGE });
@@ -86,7 +87,7 @@ export const unlikeCard = async (req: Request, res: Response) => {
 
     return res.status(Constants.ERROR_CODE_200).send(card);
   } catch (err) {
-    if ((err as any).name === 'CastError') {
+    if (err instanceof Error && err.name === 'CastError') {
       return res.status(Constants.ERROR_CODE_400).send({ message: 'Передан некорректный _id карточки' });
     }
     return res.status(Constants.ERROR_CODE_500).send({ message: Constants.ERROR_CODE_500_MESSAGE });
