@@ -1,6 +1,9 @@
 import { Request, Response } from 'express';
 import User from '../models/user';
 import { isMongooseError } from '../types/error';
+import validator from 'validator';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 
 import * as Constants from '../constants/constants';
 
@@ -32,8 +35,12 @@ export const getUserById = async (req: Request, res: Response) => {
 
 export const createUser = async (req: Request, res: Response) => {
   try {
-    const { name, about, avatar } = req.body;
-    const user = await User.create({ name, about, avatar });
+    const { name, about, avatar, email, password } = req.body;
+
+    if(!validator.isEmail(email)) {
+      return res.status(Constants.ERROR_CODE_400).send({ message: 'Передан некорректный email' })
+    }
+    const user = await User.create({ name, about, avatar, email, password });
     return res.status(Constants.ERROR_CODE_201).send(user);
   } catch (err) {
     if (err instanceof Error && err.name === 'ValidationError') {
@@ -89,4 +96,45 @@ export const updateAvatar = async (req: Request, res: Response) => {
     }
     return res.status(Constants.ERROR_CODE_500).send({ message: Constants.ERROR_CODE_500_MESSAGE });
   }
-};
+}
+
+export const login = async (req: Request, res: Response) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(Constants.ERROR_CODE_400).send({
+        message: 'Необходимо передать email и пароль'
+      });
+    }
+
+    const user = await User.findOne({ email }).select('+password');
+
+    if (!user) {
+      return res.status(Constants.ERROR_CODE_401).send({
+        message: 'Пользоваетль не найден. Проверьте почту и пароль'
+      });
+    }
+
+    const passwordValid = await bcrypt.compare(password, user.password);
+
+    if (!passwordValid) {
+      return res.status(Constants.ERROR_CODE_401).send({
+        message: 'Введен неверный пароль'
+      });
+    }
+
+    const token = jwt.sign(
+      { _id: user._id },
+      'some-secret-key',
+      { expiresIn: '7d' }
+    );
+
+    return res.status(Constants.ERROR_CODE_200).send({ token });
+
+  } catch (err) {
+    return res.status(Constants.ERROR_CODE_500).send({
+      message: Constants.ERROR_CODE_500_MESSAGE
+    });
+  }
+}

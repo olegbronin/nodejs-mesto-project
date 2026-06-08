@@ -1,6 +1,7 @@
 export const ERROR_CODE_200 = 200;
 export const ERROR_CODE_201 = 201;
 export const ERROR_CODE_400 = 400;
+export const ERROR_CODE_401 = 401;
 export const ERROR_CODE_404 = 404;
 export const ERROR_CODE_500 = 500;
 
