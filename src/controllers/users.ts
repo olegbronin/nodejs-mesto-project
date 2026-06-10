@@ -4,6 +4,7 @@ import { isMongooseError } from '../types/error';
 import validator from 'validator';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import NotFoundError from '../errors/not-found-err';
 
 import * as Constants from '../constants/constants';
 
@@ -22,7 +23,7 @@ export const getUserById = async (req: Request, res: Response) => {
     const user = await User.findById(userId);
 
     if (!user) {
-      return res.status(Constants.ERROR_CODE_404).send({ message: Constants.ERROR_CODE_404_MESSAGE_USER });
+      throw new NotFoundError('Пользователь не найден');
     }
     return res.status(Constants.ERROR_CODE_200).send(user);
   } catch (err) {
@@ -98,43 +99,59 @@ export const updateAvatar = async (req: Request, res: Response) => {
   }
 }
 
-export const login = async (req: Request, res: Response) => {
-  try {
-    const { email, password } = req.body;
+export const login = (req: Request, res: Response) => {
+  const { email, password } = req.body;
 
-    if (!email || !password) {
-      return res.status(Constants.ERROR_CODE_400).send({
-        message: 'Необходимо передать email и пароль'
+  return User.findOne({ email }).select('+password')
+    .then((user) => {
+      if (!user) {
+        return Promise.reject(new Error('Неправильная почта или пароль'));
+      }
+
+      return bcrypt.compare(password, user.password)
+        .then((matched) => {
+          if (!matched) {
+            return Promise.reject(new Error('Неправильная почта или пароль'));
+          }
+
+          const token = jwt.sign(
+            { _id: user._id },
+            'some-secret-key',
+            { expiresIn: '7d' }
+          );
+
+          res.status(Constants.ERROR_CODE_200).send({ token });
+        });
+    })
+    .catch((err) => {
+      res
+        .status(Constants.ERROR_CODE_401)
+        .send({ message: err.message });
+    });
+};
+
+export const getCurrentUser = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?._id;
+
+    if (!userId) {
+      return res.status(Constants.ERROR_CODE_401).send({
+        message: 'Пользователь не найден'
       });
     }
 
-    const user = await User.findOne({ email }).select('+password');
+    const user = await User.findById(userId);
 
     if (!user) {
-      return res.status(Constants.ERROR_CODE_401).send({
-        message: 'Пользоваетль не найден. Проверьте почту и пароль'
+      return res.status(Constants.ERROR_CODE_404).send({
+        message: Constants.ERROR_CODE_404_MESSAGE_USER
       });
     }
 
-    const passwordValid = await bcrypt.compare(password, user.password);
-
-    if (!passwordValid) {
-      return res.status(Constants.ERROR_CODE_401).send({
-        message: 'Введен неверный пароль'
-      });
-    }
-
-    const token = jwt.sign(
-      { _id: user._id },
-      'some-secret-key',
-      { expiresIn: '7d' }
-    );
-
-    return res.status(Constants.ERROR_CODE_200).send({ token });
-
+    return res.status(Constants.ERROR_CODE_200).send(user);
   } catch (err) {
     return res.status(Constants.ERROR_CODE_500).send({
       message: Constants.ERROR_CODE_500_MESSAGE
     });
   }
-}
+};

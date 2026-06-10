@@ -31,12 +31,26 @@ export const createCard = async (req: Request, res: Response) => {
 export const deleteCardById = async (req: Request, res: Response) => {
   try {
     const { cardId } = req.params;
-    const card = await Card.findByIdAndDelete(cardId);
+    const card = await Card.findById(cardId);
+    const userId = req.user?._id;
+
+    if (!userId) {
+      return res.status(Constants.ERROR_CODE_401).send({
+        message: 'Необходимо авторизироваться'
+      });
+    }
 
     if (!card) {
       return res.status(Constants.ERROR_CODE_404).send({ message: Constants.ERROR_CODE_404_MESSAGE_CARD });
     }
 
+    if (card.owner.toString() !== userId) {
+      return res.status(Constants.ERROR_CODE_403).send({
+        message: 'Вы не можете удалять карточки других пользователей'
+      });
+    }
+
+    await Card.findByIdAndDelete(cardId);
     return res.status(Constants.ERROR_CODE_200).send({ message: 'Карточка успешно удалена' });
   } catch (err) {
     if (err instanceof Error && err.name === 'CastError') {
