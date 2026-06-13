@@ -4,6 +4,8 @@ import userRoutes from './routes/users';
 import cardRoutes from './routes/cards';
 import { createUser, login } from './controllers/users';
 import { auth } from './middlewares/auth';
+import { validateSignup, validateSignin } from './middlewares/validators';
+import { requestLogger, errorLogger } from './middlewares/logger';
 
 const PORT = 3000;
 const app = express();
@@ -16,11 +18,15 @@ mongoose.connect('mongodb://localhost:27017/mestodb');
 app.use('/users', userRoutes);
 app.use('/cards', cardRoutes);
 
-app.post('/signin', login);
-app.post('/signup', createUser);
+app.post('/signup', validateSignup, createUser);
+app.post('/signin', validateSignin, login);
 
 app.use('/users', auth);
 app.use('/cards', cardRoutes);
+
+app.use(requestLogger);
+app.use(errorLogger);
+
 
 app.listen(PORT, () => {
   console.log('Hello world');

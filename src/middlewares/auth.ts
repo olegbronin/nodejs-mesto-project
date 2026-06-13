@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import UnauthorizedError from '../errors/unauthorized-err';
 
 declare global {
   namespace Express {
