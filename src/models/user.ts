@@ -28,7 +28,8 @@ const userSchema = new Schema<IUser>({
   avatar: {
     type: String,
     required: false,
-    default: 'https://pictures.s3.yandex.net/resources/jacques-cousteau_1604399756.png'
+    default: 'https://pictures.s3.yandex.net/resources/jacques-cousteau_1604399756.png',
+    match: /^https?:\/\/(?:www\.)?[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(?:\/[\w\-._~:/?#[\]@!$&'()*+,;=]*)?#?$/,
   },
   email: {
     type: String,
