@@ -6,6 +6,8 @@ import validator from 'validator';
 import NotFoundError from '../errors/not-found-err';
 import UnauthorizedError from '../errors/unauthorized-err';
 import ConflictError from '../errors/conflict-err';
+import { IError } from '../errors/error-interface';
+import { MongoError } from 'mongodb';
 
 import * as Constants from '../constants/constants';
 
@@ -14,11 +16,15 @@ declare global {
     statusCode?: number;
   }
 }
-
 export const getUsers = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const users = await User.find();
-    res.status(Constants.ERROR_CODE_200).send(users);
+    const usersResponse = users.map((user) => {
+      const userObj = user.toObject();
+      delete userObj.password;
+      return userObj;
+    });
+    res.status(Constants.ERROR_CODE_200).send(usersResponse);
   } catch (err) {
     next(err);
   }
@@ -33,7 +39,9 @@ export const getUserById = async (req: Request, res: Response, next: NextFunctio
       throw new NotFoundError('Пользователь с таким idне найден');
     }
 
-    res.status(Constants.ERROR_CODE_200).send(user);
+    const userResponse = user.toObject();
+    delete userResponse.password;
+    res.status(Constants.ERROR_CODE_200).send(userResponse);
   } catch (err) {
     next(err);
   }
@@ -55,7 +63,9 @@ export const getCurrentUser = async (req: Request, res: Response, next: NextFunc
       throw new NotFoundError('Пользователь с таким idне найден');
     }
 
-    res.status(Constants.ERROR_CODE_200).send(user);
+    const userResponse = user.toObject();
+    delete userResponse.password;
+    res.status(Constants.ERROR_CODE_200).send(userResponse);
   } catch (err) {
     next(err);
   }
@@ -72,9 +82,12 @@ export const createUser = async (req: Request, res: Response, next: NextFunction
     }
 
     const user = await User.create({ name, about, avatar, email, password });
-    res.status(Constants.ERROR_CODE_201).send(user);
+    const response = user.toObject();
+    delete response.password;
+    res.status(Constants.ERROR_CODE_201).send(response);
   } catch (err) {
-    if ((err as any).code === 11000) {
+    const mongoError = err as MongoError;
+    if (mongoError.code === 11000) {
       next(new ConflictError('Пользователь с таким email уже существует'));
     } else {
       next(err);

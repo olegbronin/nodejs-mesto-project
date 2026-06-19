@@ -1,19 +1,19 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import Card from '../models/card';
 import { isMongooseError } from '../types/error';
 
 import * as Constants from '../constants/constants';
 
-export const getCards = async (req: Request, res: Response) => {
+export const getCards = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const cards = await Card.find();
     res.status(Constants.ERROR_CODE_200).send(cards);
   } catch (err) {
-    res.status(Constants.ERROR_CODE_500).send({ message: Constants.ERROR_CODE_500_MESSAGE });
+    next(err);
   }
 };
 
-export const createCard = async (req: Request, res: Response) => {
+export const createCard = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { name, link } = req.body;
     const owner = req.user?._id;
@@ -21,14 +21,11 @@ export const createCard = async (req: Request, res: Response) => {
     const card = await Card.create({ name, link, owner });
     return res.status(Constants.ERROR_CODE_201).send(card);
   } catch (err) {
-    if (err instanceof Error && err.name === 'ValidationError') {
-      return res.status(Constants.ERROR_CODE_400).send({ message: 'Переданы некорректные данные при создании карточки' });
-    }
-    return res.status(Constants.ERROR_CODE_500).send({ message: Constants.ERROR_CODE_500_MESSAGE });
+    next(err);
   }
 };
 
-export const deleteCardById = async (req: Request, res: Response) => {
+export const deleteCardById = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { cardId } = req.params;
     const card = await Card.findById(cardId);
@@ -53,14 +50,11 @@ export const deleteCardById = async (req: Request, res: Response) => {
     await Card.findByIdAndDelete(cardId);
     return res.status(Constants.ERROR_CODE_200).send({ message: 'Карточка успешно удалена' });
   } catch (err) {
-    if (err instanceof Error && err.name === 'CastError') {
-      return res.status(Constants.ERROR_CODE_400).send({ message: 'Передан некорректный _id карточки' });
-    }
-    return res.status(Constants.ERROR_CODE_500).send({ message: Constants.ERROR_CODE_500_MESSAGE });
+    next(err);
   }
 };
 
-export const likeCard = async (req: Request, res: Response) => {
+export const likeCard = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { cardId } = req.params;
     const userId = req.user?._id;
@@ -77,14 +71,11 @@ export const likeCard = async (req: Request, res: Response) => {
 
     return res.status(Constants.ERROR_CODE_200).send(card);
   } catch (err) {
-    if (err instanceof Error && err.name === 'CastError') {
-      return res.status(Constants.ERROR_CODE_400).send({ message: 'Передан некорректный _id карточки' });
-    }
-    return res.status(Constants.ERROR_CODE_500).send({ message: Constants.ERROR_CODE_500_MESSAGE });
+    next(err);
   }
 };
 
-export const unlikeCard = async (req: Request, res: Response) => {
+export const unlikeCard = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { cardId } = req.params;
     const userId = req.user?._id;
@@ -101,9 +92,6 @@ export const unlikeCard = async (req: Request, res: Response) => {
 
     return res.status(Constants.ERROR_CODE_200).send(card);
   } catch (err) {
-    if (err instanceof Error && err.name === 'CastError') {
-      return res.status(Constants.ERROR_CODE_400).send({ message: 'Передан некорректный _id карточки' });
-    }
-    return res.status(Constants.ERROR_CODE_500).send({ message: Constants.ERROR_CODE_500_MESSAGE });
+    next(err);
   }
 };
