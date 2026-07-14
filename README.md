@@ -1,4 +1,7 @@
 # Бэкенд Mesto. Каркас API Mesto
+Публичный Ip-адрес: 51.250.43.168
+Домен для frontend: https://student.nomorepartiessite.ru
+Домен для backend: https://api.student.nomorepartiessite.ru
 
 ## Используемые технологии и решения
 - Typescript в качестве основного языка проекта
