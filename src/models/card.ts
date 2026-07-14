@@ -18,6 +18,7 @@ const cardSchema = new Schema<ICard>({
   link: {
     type: String,
     required: true,
+    match: /^https?:\/\/(?:www\.)?[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(?:\/[\w\-._~:/?#[\]@!$&'()*+,;=]*)?#?$/,
   },
   owner: {
     type: Schema.Types.ObjectId,
